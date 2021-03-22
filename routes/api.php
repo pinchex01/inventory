@@ -17,3 +17,15 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::resource('/oders', 'App\Http\Controllers\OrderController', [
+    'except' => ['edit', 'show']
+]);
+
+Route::resource('/products', 'App\Http\Controllers\ProductController', [
+    'except' => ['edit', 'show']
+]);
+
+Route::resource('/suppliers', 'App\Http\Controllers\SupplierController', [
+    'except' => ['edit', 'show']
+]);
