@@ -2,8 +2,14 @@
 
 namespace App\Exceptions;
 
-use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
+use Illuminate\Support\Str;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\UnauthorizedException;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class Handler extends ExceptionHandler
 {
@@ -37,5 +43,41 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    public function render($request, Throwable $exception)
+    {
+        if ($exception instanceof NotFoundHttpException && Str::contains($request->fullUrl(), ['api'])) {
+            return response()->json([
+                'message' => "Page not found",
+            ], 404);
+        }
+
+        if ($exception instanceof ValidationException && $request->routeIs('api.*')) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => $exception->validator->getMessageBag()->getMessages()
+            ], 422);
+        }
+
+        if ($exception instanceof UnauthorizedException && $request->routeIs('api.*')) {
+            return response()->json([
+                'message' => "Unauthorized access",
+            ], 401);
+        }
+
+        if ($exception instanceof AuthorizationException && $request->routeIs('api.*')) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 403);
+        }
+
+        if ($exception instanceof AuthenticationException && $request->routeIs('api.*')) {
+            return response()->json([
+                'message' => "This is a protected area",
+            ], 403);
+        }
+
+        return parent::render($request, $exception);
     }
 }
